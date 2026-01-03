@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Neural Engine V7.1 (DNA Upgrade)</title>
+    <title>Neural Engine V8.5 (Hyper-Sense Upgrade)</title>
     <style>
         body { margin: 0; background: #000; overflow: hidden; font-family: 'Courier New', monospace; user-select: none; }
         
@@ -10,54 +10,69 @@
         #hud {
             position: absolute; top: 20px; left: 20px; z-index: 10;
             color: #fff; 
-            background: rgba(10, 10, 15, 0.8);
+            background: rgba(10, 10, 15, 0.85);
             padding: 20px;
             border: 1px solid rgba(255,255,255,0.2);
             border-left: 4px solid #ff0055; /* Dynamic Accent */
             border-radius: 12px;
             backdrop-filter: blur(8px);
-            min-width: 260px;
+            min-width: 280px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            transition: border-color 0.3s ease;
         }
 
         h1 { margin: 0 0 15px 0; font-size: 16px; letter-spacing: 2px; color: #eee; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 10px;}
 
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; align-items: center; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; align-items: center; }
         .val { font-weight: bold; color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.4); }
 
         #gesture-status {
             margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.15);
-            text-align: center; font-size: 13px; color: #aaa; font-weight: bold;
+            text-align: center; font-size: 13px; color: #aaa; font-weight: bold; letter-spacing: 1px;
         }
-        .active-trigger { color: #fff !important; text-shadow: 0 0 15px #fff; background: rgba(255,255,255,0.1); border-radius: 4px; }
+        .active-trigger { color: #fff !important; text-shadow: 0 0 15px #fff; background: rgba(255,255,255,0.1); border-radius: 4px; padding: 2px 0;}
 
         /* Camera Feed */
         #camera-preview {
             position: absolute; bottom: 30px; right: 30px; z-index: 10;
-            width: 400px; height: 300px; 
+            width: 320px; height: 240px; 
             border: 2px solid rgba(255,255,255,0.3); border-radius: 12px;
-            overflow: hidden; transform: scaleX(-1); opacity: 0.9;
+            overflow: hidden; transform: scaleX(-1); opacity: 0.8;
             box-shadow: 0 0 30px rgba(0,0,0,0.8);
             background: #000;
         }
         video { width: 100%; height: 100%; object-fit: cover; }
         
-        .controls { font-size: 12px; color: #888; margin-top: 15px; line-height: 1.6; }
+        .controls { font-size: 11px; color: #888; margin-top: 15px; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
         b { color: #ccc; }
+        
+        /* Loading Overlay */
+        #loader {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 100; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 20px; pointer-events: none; transition: opacity 1s;
+        }
     </style>
 </head>
 <body>
 
+<div id="loader">INITIALIZING NEURAL CORE V8.5...</div>
+
 <div id="hud">
-    <h1>NEURAL CORE V7.1</h1>
-    <div class="info-row"><span>SHAPE</span> <span class="val" id="shape-name">NEON HEART</span></div>
-    <div class="info-row"><span>ZOOM</span> <span class="val" id="zoom-text">1.0x</span></div>
+    <h1>NEURAL CORE V8.5</h1>
+    <div class="info-row"><span>SYSTEM</span> <span class="val" id="shape-name">NEON HEART</span></div>
+    <div class="info-row"><span>DEPTH</span> <span class="val" id="zoom-text">1.0x</span></div>
+    <div class="info-row"><span>ROTATION</span> <span class="val" id="rot-text">0.0</span></div>
+    <div class="info-row"><span>ENERGY</span> <span class="val" id="charge-text">0%</span></div>
     
     <div id="gesture-status">WAITING FOR HAND...</div>
     
     <div class="controls">
-        <b>👌 INDEX PINCH:</b> ZOOM IN/OUT<br>
-        <b>🖕 MIDDLE PINCH:</b> CHANGE SHAPE
+        <b>✊ FIST:</b> TIME FREEZE<br>
+        <b>✋ OPEN PALM:</b> EXPLODE PARTICLES<br>
+        <b>🫰 SNAP:</b> CHANGE SHAPE<br>
+        <b>👋 ROTATE:</b> SPIN HAND<br>
+        <b>👌 PINCH:</b> CHARGE ENERGY
     </div>
 </div>
 
@@ -67,8 +82,8 @@
 <script type="importmap">
     {
         "imports": {
-            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
         }
     }
 </script>
@@ -80,7 +95,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 // --- CONFIG ---
-const PARTICLE_COUNT = 40000; 
+const PARTICLE_COUNT = 45000; 
 const SHAPES = ['heart', 'blackhole', 'cube', 'dna', 'galaxy', 'saturn'];
 const LABELS = ['NEON HEART', 'EVENT HORIZON', 'HYPER CUBE', 'DNA HELIX', 'SPIRAL GALAXY', 'SATURN RINGS'];
 
@@ -96,13 +111,41 @@ const THEMES = [
 
 let currentShapeIdx = 0;
 
-// --- STATE ---
+// --- ADVANCED STATE ---
 const state = {
+    // Basic
     zoom: 1.0,
     targetZoom: 1.0,
-    isClicking: false,
+    pulse: 1.0,
+    
+    // Hand Tracking Data
     handDetected: false,
-    pulse: 1.0
+    handPosition: new THREE.Vector3(0, 0, 0), // Normalized -1 to 1
+    rawHandPosition: new THREE.Vector3(0, 0, 0), // Unsmoothed
+    
+    // Gestures
+    isFrozen: false,       // Fist
+    isExploding: false,    // Open Palm
+    explodeFactor: 0.0,    // Animation value for explosion
+    isCharging: false,     // Pinch Hold
+    chargeLevel: 0.0,      // 0.0 to 1.0
+    
+    // Snap Logic
+    snapPrimed: false,     // Has the user pinched middle+thumb?
+    lastSnapTime: 0,       // Debounce timer
+
+    // Rotation Logic
+    rotationAngle: 0,
+    rotationVelocity: 0.002, // Base auto-spin
+    lastHandAngle: null,
+    
+    // Movement Logic
+    sceneOffset: new THREE.Vector3(0, 0, 0),
+    
+    // Swipe Logic
+    swipeVelocityX: 0,
+    lastSwipeX: 0,
+    swipeCooldown: 0
 };
 
 // --- THREE.JS SETUP ---
@@ -122,8 +165,8 @@ const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 
 const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-bloomPass.strength = 0.7;
-bloomPass.radius = 0.4;
+bloomPass.strength = 0.8; // Slight boost
+bloomPass.radius = 0.5;
 bloomPass.threshold = 0.15;
 composer.addPass(bloomPass);
 
@@ -147,6 +190,7 @@ const geometry = new THREE.BufferGeometry();
 const posArray = new Float32Array(PARTICLE_COUNT * 3);
 const targetArray = new Float32Array(PARTICLE_COUNT * 3);
 const colors = new Float32Array(PARTICLE_COUNT * 3);
+const initialPos = new Float32Array(PARTICLE_COUNT * 3); // For freeze memory
 
 for(let i=0; i<PARTICLE_COUNT; i++) {
     const i3 = i*3;
@@ -154,13 +198,14 @@ for(let i=0; i<PARTICLE_COUNT; i++) {
     posArray[i3+1] = (Math.random()-0.5) * 50;
     posArray[i3+2] = (Math.random()-0.5) * 50;
     targetArray[i3] = posArray[i3];
+    initialPos[i3] = posArray[i3];
 }
 
 geometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
 geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
 const material = new THREE.PointsMaterial({
-    size: 0.14,
+    size: 0.12,
     map: createCrispTexture(),
     vertexColors: true,
     transparent: true,
@@ -173,6 +218,29 @@ const material = new THREE.PointsMaterial({
 const particles = new THREE.Points(geometry, material);
 scene.add(particles);
 
+// --- VISUAL CURSOR (HAND TRACKING POINT) ---
+// This provides instant visual feedback before physics smoothing kicks in
+const cursorGeo = new THREE.SphereGeometry(0.1, 16, 16);
+const cursorMat = new THREE.MeshBasicMaterial({ 
+    color: 0xff0055, 
+    transparent: true, 
+    opacity: 0.0, // Hidden until hand found
+    blending: THREE.AdditiveBlending 
+});
+const handCursor = new THREE.Mesh(cursorGeo, cursorMat);
+// Add a glow sprite to cursor
+const spriteMat = new THREE.SpriteMaterial({ 
+    map: createCrispTexture(), 
+    color: 0xff0055, 
+    transparent: true, 
+    blending: THREE.AdditiveBlending 
+});
+const cursorGlow = new THREE.Sprite(spriteMat);
+cursorGlow.scale.set(1.5, 1.5, 1.5);
+handCursor.add(cursorGlow);
+scene.add(handCursor);
+
+
 // --- SHAPE LOGIC ---
 function updateTargets() {
     const type = SHAPES[currentShapeIdx];
@@ -182,6 +250,11 @@ function updateTargets() {
     document.getElementById('shape-name').innerText = LABELS[currentShapeIdx];
     const hueVal = theme.h * 360;
     document.getElementById('hud').style.borderLeftColor = `hsl(${hueVal}, 100%, 50%)`;
+    
+    // Cursor Color Update
+    const col = new THREE.Color().setHSL(theme.h, 1.0, 0.6);
+    handCursor.material.color.copy(col);
+    cursorGlow.material.color.copy(col);
 
     // Trigger Animation
     const status = document.getElementById('gesture-status');
@@ -189,7 +262,6 @@ function updateTargets() {
     status.classList.add('active-trigger');
     setTimeout(() => {
         status.classList.remove('active-trigger');
-        status.innerText = "HAND ACTIVE";
     }, 600);
 
     for(let i=0; i<PARTICLE_COUNT; i++) {
@@ -200,6 +272,7 @@ function updateTargets() {
         
         let x=0, y=0, z=0;
 
+        // --- SHAPE FORMULAS ---
         if (type === 'heart') {
             const t = theta;
             const r = Math.sqrt(Math.random()); 
@@ -227,40 +300,27 @@ function updateTargets() {
             }
         }
         else if (type === 'dna') {
-            // IMPROVED DNA LOGIC
-            const strands = 2; // Double helix
+            const strands = 2; 
             const heightSpan = 22;
-            
-            // Map index to height (-11 to +11)
             let h = (pt * heightSpan) - (heightSpan/2);
-            
-            // Twist factor (how many turns)
             const angle = h * 0.7; 
             const radius = 3.5;
-
-            // Determine if this particle is Strand 1, Strand 2, or a Rung
-            const particleType = i % 10; // 0-3: Strand A, 4-7: Strand B, 8-9: Rung
+            const particleType = i % 10; 
 
             if (particleType < 4) {
-                // Strand A
-                // Add slight random jitter (0.2) for "energy cloud" look
                 x = Math.cos(angle) * radius + (Math.random()-0.5)*0.3;
                 z = Math.sin(angle) * radius + (Math.random()-0.5)*0.3;
                 y = h;
             } else if (particleType < 8) {
-                // Strand B (Offset by PI)
                 x = Math.cos(angle + Math.PI) * radius + (Math.random()-0.5)*0.3;
                 z = Math.sin(angle + Math.PI) * radius + (Math.random()-0.5)*0.3;
                 y = h;
             } else {
-                // Rungs (Connecting base pairs)
-                // Interpolate strictly between Strand A and B
-                const t = Math.random(); // 0 to 1 position along the rung
+                const t = Math.random(); 
                 const x1 = Math.cos(angle) * radius;
                 const z1 = Math.sin(angle) * radius;
                 const x2 = Math.cos(angle + Math.PI) * radius;
                 const z2 = Math.sin(angle + Math.PI) * radius;
-                
                 x = x1 + (x2 - x1) * t;
                 z = z1 + (z2 - z1) * t;
                 y = h;
@@ -304,7 +364,13 @@ script2.src = "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils
 script1.onload = () => document.head.appendChild(script2);
 script2.onload = () => {
     const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
-    hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.65, minTrackingConfidence: 0.65 });
+    // Optimize for better tracking
+    hands.setOptions({ 
+        maxNumHands: 1, 
+        modelComplexity: 1, 
+        minDetectionConfidence: 0.6, // Slightly lower for faster detection
+        minTrackingConfidence: 0.6 
+    });
     hands.onResults(onHandResults);
     
     const cameraFeed = new Camera(document.getElementById('input_video'), {
@@ -312,35 +378,178 @@ script2.onload = () => {
         width: 640, height: 480
     });
     cameraFeed.start();
+    
+    setTimeout(() => { document.getElementById('loader').style.opacity = 0; }, 2000);
 };
 document.head.appendChild(script1);
 
+// Helper Math
 function dist(p1, p2) { return Math.hypot(p1.x - p2.x, p1.y - p2.y); }
+// Standard Lerp
+function lerp(start, end, amt) { return (1 - amt) * start + amt * end; }
+// Adaptive Lerp (Faster when distance is large)
+function adaptiveLerp(start, end, minSpeed, maxSpeed) {
+    const diff = Math.abs(end - start);
+    // If different is high, move fast. If low, move slow (smooth).
+    const speed = minSpeed + (Math.min(diff, 1.0) * (maxSpeed - minSpeed));
+    return start + (end - start) * speed;
+}
 
+// --- GESTURE RECOGNITION ---
 function onHandResults(results) {
+    const statusEl = document.getElementById('gesture-status');
+    const hud = document.getElementById('hud');
+    
     if (!results.multiHandLandmarks || !results.multiHandLandmarks[0]) {
         state.handDetected = false;
+        statusEl.innerText = "WAITING FOR HAND...";
+        statusEl.className = "";
+        handCursor.material.opacity = 0; // Hide cursor
+        
+        // Reset physics slightly when hand lost
+        state.rotationVelocity = lerp(state.rotationVelocity, 0.002, 0.05);
+        state.sceneOffset.lerp(new THREE.Vector3(0,0,0), 0.05);
+        state.targetZoom = lerp(state.targetZoom, 1.0, 0.05);
+        
+        // Reset Gestures
+        state.isFrozen = false;
+        state.isExploding = false;
+        state.isCharging = false;
+        state.snapPrimed = false;
+        state.chargeLevel = Math.max(0, state.chargeLevel - 0.05);
         return;
     }
+
     state.handDetected = true;
+    handCursor.material.opacity = 0.8; // Show cursor
+
     const lm = results.multiHandLandmarks[0];
+    const palm = lm[0];
+    const indexTip = lm[8];
+    const thumbTip = lm[4];
+    const middleTip = lm[12];
+    
+    // 1. UPDATE HAND POSITION
+    const targetX = (palm.x - 0.5) * 2;
+    const targetY = -(palm.y - 0.5) * 2;
+    
+    // Store raw for calculations
+    state.rawHandPosition.set(targetX, targetY, 0);
 
-    // 1. ZOOM
-    const pinch = dist(lm[4], lm[8]);
-    const nZoom = Math.max(0, Math.min(1, (pinch - 0.02) * 4));
-    state.targetZoom = 0.5 + (nZoom * 2.0);
+    // Adaptive Smoothing for Scene Movement:
+    // If moving fast, increase lerp factor (0.2). If slow, decrease (0.05) for steadiness.
+    const moveDist = state.handPosition.distanceTo(state.rawHandPosition);
+    const smoothFactor = 0.05 + Math.min(moveDist * 2, 0.15); 
+    
+    state.handPosition.lerp(state.rawHandPosition, smoothFactor);
 
-    // 2. CHANGE
-    const click = dist(lm[4], lm[12]);
-    if (click < 0.05) {
-        if (!state.isClicking) {
-            state.isClicking = true;
+    // Update Cursor Position Instantly (Visual feedback needs to be fast)
+    handCursor.position.set(targetX * 5, targetY * 5, 2);
+
+    // 2. DEPTH / ZOOM (Z-AXIS)
+    // Scale based on distance between wrist(0) and middle_finger_mcp(9) 
+    const handSize = dist(lm[0], lm[9]);
+    const targetZ = 0.5 + (handSize * 4.0); 
+    state.targetZoom = lerp(state.targetZoom, targetZ, 0.1);
+    
+    // 3. FIST DETECTION (FREEZE)
+    // Hysteresis: Trigger at < 0.10, Release at > 0.14
+    const fingerTips = [8, 12, 16, 20];
+    const avgDistToPalm = fingerTips.reduce((sum, id) => sum + dist(lm[id], lm[0]), 0) / 4;
+    
+    if (avgDistToPalm < 0.11) state.isFrozen = true;
+    else if (avgDistToPalm > 0.15) state.isFrozen = false;
+    
+    // 4. OPEN PALM (EXPLODE)
+    // Trigger at > 0.25
+    const isfingersFar = fingerTips.every(id => dist(lm[id], lm[0]) > 0.25);
+    state.isExploding = isfingersFar;
+
+    // 5. PINCH (CHARGE) -> Index + Thumb
+    const pinchDist = dist(thumbTip, indexTip);
+    state.isCharging = pinchDist < 0.05;
+
+    // 6. SNAP DETECTION (CHANGE SHAPE) -> Middle + Thumb
+    const snapDist = dist(thumbTip, middleTip);
+    const now = Date.now();
+
+    // Prime the snap (Thumb touches Middle finger)
+    if (snapDist < 0.06) {
+        state.snapPrimed = true;
+    } 
+    // Trigger the snap (Rapid release)
+    else if (state.snapPrimed && snapDist > 0.14) {
+        state.snapPrimed = false; // Reset prime
+        
+        // Debounce (prevent double snaps)
+        if (now - state.lastSnapTime > 600) {
+            state.lastSnapTime = now;
+            
+            // EXECUTE SNAP ACTION
             currentShapeIdx = (currentShapeIdx + 1) % SHAPES.length;
             updateTargets();
+            
+            statusEl.innerText = "🫰 SNAP!";
+            statusEl.className = "active-trigger";
         }
-    } else if (click > 0.08) {
-        state.isClicking = false;
     }
+
+    // 7. ROTATION (Index vs Palm Angle)
+    const angle = Math.atan2(indexTip.y - palm.y, indexTip.x - palm.x);
+    if (state.lastHandAngle !== null && !state.isFrozen && !state.isExploding) {
+        let delta = angle - state.lastHandAngle;
+        if (delta > Math.PI) delta -= Math.PI * 2;
+        if (delta < -Math.PI) delta += Math.PI * 2;
+        
+        // Adaptive Rotation Smoothing
+        const rotSpeed = Math.abs(delta);
+        const rotLerp = rotSpeed > 0.1 ? 0.4 : 0.05; // Snappy spin vs Smooth coasting
+        state.rotationVelocity = lerp(state.rotationVelocity, delta * 3.0, rotLerp);
+    }
+    state.lastHandAngle = angle;
+
+    // --- STATE MACHINE & UI ---
+    
+    // Priority: Fist > Open > Pinch > Snap(Event) > Idle
+    if (state.isFrozen) {
+        statusEl.innerText = "✊ TIME FREEZE";
+        statusEl.className = "active-trigger";
+    } else if (state.isExploding) {
+        statusEl.innerText = "✋ NOVA BURST";
+        statusEl.className = "active-trigger";
+    } else if (state.isCharging) {
+        state.chargeLevel = Math.min(1.0, state.chargeLevel + 0.03); // Faster charge
+        statusEl.innerText = `⚡ CHARGING ${Math.floor(state.chargeLevel*100)}%`;
+        statusEl.className = "active-trigger";
+    } else {
+        // IDLE / ROTATE
+        state.chargeLevel = Math.max(0, state.chargeLevel - 0.05);
+        
+        // Only show status if not recently snapped
+        if (now - state.lastSnapTime > 800) {
+            if (state.snapPrimed) {
+                statusEl.innerText = "READY TO SNAP...";
+                statusEl.style.color = "#ff0055";
+            } else if (Math.abs(state.rotationVelocity) > 0.02) {
+                statusEl.innerText = "SPINNING";
+                statusEl.className = "";
+                statusEl.style.color = "#aaa";
+            } else {
+                statusEl.innerText = "HAND ACTIVE";
+                statusEl.className = "";
+                statusEl.style.color = "#aaa";
+            }
+        }
+    }
+
+    // Move Shape based on Hand Position (Inverse camera movement feel)
+    const targetOffset = new THREE.Vector3(
+        state.handPosition.x * 5, 
+        state.handPosition.y * 5, 
+        0
+    );
+    // Smooth dampening for the main shape (The cursor is instant, the shape lags slightly for weight)
+    state.sceneOffset.lerp(targetOffset, 0.12);
 }
 
 // --- ANIMATION LOOP ---
@@ -358,48 +567,125 @@ function animate() {
         state.pulse = 1;
     }
 
+    // Smooth Zoom Transition
     state.zoom += (state.targetZoom - state.zoom) * 0.1;
     
-    if(state.handDetected) document.getElementById('zoom-text').innerText = state.zoom.toFixed(2) + "x";
-    else document.getElementById('gesture-status').innerText = "SEARCHING...";
+    // HUD Updates
+    document.getElementById('zoom-text').innerText = state.zoom.toFixed(2) + "x";
+    document.getElementById('rot-text').innerText = (state.rotationVelocity * 100).toFixed(1);
+    document.getElementById('charge-text').innerText = Math.floor(state.chargeLevel*100) + "%";
 
+    // Explode Logic
+    const targetExplode = state.isExploding ? 1.0 : 0.0;
+    state.explodeFactor = lerp(state.explodeFactor, targetExplode, 0.1); // Faster explosion reaction
+
+    // Rotation Physics (Inertia)
+    if (!state.isFrozen) {
+        // Apply friction
+        state.rotationVelocity *= 0.95; 
+        state.rotationAngle += state.rotationVelocity;
+    }
+
+    // Pulse the cursor
+    if(state.handDetected) {
+        const s = 1.0 + Math.sin(time * 10) * 0.1;
+        handCursor.scale.set(s,s,s);
+    }
+
+    // --- PARTICLE PHYSICS UPDATE ---
+    
     const positions = geometry.attributes.position.array;
     const colorsArr = geometry.attributes.color.array;
     const currentTheme = THEMES[currentShapeIdx];
+    
+    const cosRot = Math.cos(state.rotationAngle);
+    const sinRot = Math.sin(state.rotationAngle);
 
     for(let i=0; i<PARTICLE_COUNT; i++) {
         const i3 = i*3;
 
+        // 1. FREEZE CHECK
+        if (state.isFrozen) {
+            positions[i3] += (Math.random()-0.5) * 0.02;
+            positions[i3+1] += (Math.random()-0.5) * 0.02;
+            positions[i3+2] += (Math.random()-0.5) * 0.02;
+            
+            colorsArr[i3] = lerp(colorsArr[i3], 0.8, 0.1);
+            colorsArr[i3+1] = lerp(colorsArr[i3+1], 0.9, 0.1);
+            colorsArr[i3+2] = lerp(colorsArr[i3+2], 1.0, 0.1);
+            continue; 
+        }
+
+        // 2. BASE TARGET CALCULATION
         let tx = targetArray[i3] * state.zoom * state.pulse;
         let ty = targetArray[i3+1] * state.zoom * state.pulse;
         let tz = targetArray[i3+2] * state.zoom * state.pulse;
 
-        // Rotation - SLOWED DOWN (0.05 instead of 0.2)
-        const rot = time * 0.05; 
-        const x = tx; const z = tz;
-        tx = x * Math.cos(rot) - z * Math.sin(rot);
-        tz = x * Math.sin(rot) + z * Math.cos(rot);
+        // 3. ROTATION (Around Y axis)
+        const rx = tx * cosRot - tz * sinRot;
+        const rz = tx * sinRot + tz * cosRot;
+        tx = rx; tz = rz;
 
-        const ease = 0.2; 
+        // 4. EXPLOSION MODIFIER
+        if (state.explodeFactor > 0.01) {
+            const dist = Math.sqrt(tx*tx + ty*ty + tz*tz) + 0.1;
+            const force = 12 * state.explodeFactor; // Strength
+            tx += (tx/dist) * force * (1 + Math.random());
+            ty += (ty/dist) * force * (1 + Math.random());
+            tz += (tz/dist) * force * (1 + Math.random());
+        }
+
+        // 5. HAND MAGNET (Subtle Attraction)
+        // Only if not charging/exploding
+        if (state.handDetected && !state.isExploding && !state.isCharging) {
+            // handPosition is -1 to 1. Map to world coordinates approx (-10 to 10)
+            const handX = state.handPosition.x * 5; // Reduced multiplier for better alignment
+            const handY = state.handPosition.y * 5;
+            
+            const dx = handX - tx;
+            const dy = handY - ty;
+            const d = Math.sqrt(dx*dx + dy*dy);
+            
+            if (d < 6) {
+                const pull = (6 - d) * 0.03; // Stronger pull
+                tx += dx * pull;
+                ty += dy * pull;
+            }
+        }
+
+        // 6. GLOBAL HAND OFFSET (Minority Report Slide)
+        tx += state.sceneOffset.x;
+        ty += state.sceneOffset.y;
+
+        // 7. PHYSICS INTEGRATION (Lerp)
+        // Adaptive Physics: If exploding, move fast. If normal, move smooth.
+        const ease = state.isExploding ? 0.2 : 0.15; 
         
         positions[i3] += (tx - positions[i3]) * ease;
         positions[i3+1] += (ty - positions[i3+1]) * ease;
         positions[i3+2] += (tz - positions[i3+2]) * ease;
 
-        // Color Logic
-        const color = new THREE.Color();
+        // 8. COLOR DYNAMICS
         const distToCenter = Math.sqrt(tx*tx + ty*ty + tz*tz);
         
         let hue = currentTheme.h + (distToCenter*0.01);
         let sat = currentTheme.s;
         let light = currentTheme.l;
 
-        if (state.isClicking) {
-            color.setHSL(0, 0, 1.0); 
-        } else {
-            if (Math.random() > 0.98) light += 0.3;
-            color.setHSL(hue, sat, light);
+        // Charge Effect (Turn White/Bright)
+        if (state.isCharging) {
+            light += state.chargeLevel * 0.5; // Boost brightness
+            sat -= state.chargeLevel * 0.8;   // Desaturate to white
         }
+
+        // Explosion Heat
+        if (state.isExploding) {
+            hue = 0.05 + (Math.random() * 0.1); // Fire colors
+            light = 0.9;
+        }
+
+        const color = new THREE.Color();
+        color.setHSL(hue, sat, light);
 
         colorsArr[i3] = color.r;
         colorsArr[i3+1] = color.g;
